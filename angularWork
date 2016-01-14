@@ -1,0 +1,114 @@
+
+function homeController($scope,$filter){
+
+	$scope.json={
+		"timing":{
+			"sun":[],
+			"mon":[{"from":1030,"to":1400},{"from":1830,"to":2300}],
+			"tue":[{"from":1030,"to":1400},{"from":1830,"to":2300}],
+			"wed":[{"from":1030,"to":1400},{"from":1830,"to":2300}],
+			"thu":[{"from":1030,"to":1400},{"from":1830,"to":2300}],
+			"fri":[{"from":1030,"to":1400},{"from":1830,"to":2300}],
+			"sat":[{"from":1030,"to":1400},{"from":1830,"to":2300}]
+		}
+	}
+ 
+
+	$scope.jsonToStringData=function(e){
+		var allTiming = e.timing;
+		var counterOfTiming=0;
+		var check = true;
+		var closeDays = [];
+		var times=[];
+		var howManyTimeInterval=0,temp=0;
+		for( k in allTiming){
+			if(allTiming[k].length>0){
+				++counterOfTiming;
+				if(allTiming[k].length>temp){
+					temp=allTiming[k].length
+					howManyTimeInterval=allTiming[k].length;
+					times=allTiming[k];
+				}
+			} else if(allTiming[k].length==0){
+               
+				closeDays.push($filter("fullDayFilter")(k));
+			}
+		} 
+         
+		if(counterOfTiming==7 && howManyTimeInterval==1 && $filter("myShortTime")(times[0]["from"])+" to "+$filter("myShortTime")(times[0]["to"])=="12:00 AM to 11:59 PM")
+               return "24*7"; 
+        else if(counterOfTiming<7 && howManyTimeInterval==1 && $filter("myShortTime")(times[0]["from"])+" to "+$filter("myShortTime")(times[0]["to"])=="12:00 AM to 11:59 PM")
+        {
+			var additionalInfo="", timingInfo=[];
+			if(closeDays.length!=0)
+				additionalInfo="except "+$filter("arrayToString")(closeDays);
+			return "24*7"+timingInfo.join(", ")+" "+additionalInfo;
+		}
+		else if(counterOfTiming<=7 && $filter("myShortTime")(times[0]["from"])+" to "+$filter("myShortTime")(times[0]["to"])!="12:00 AM to 11:59 PM"){
+			var additionalInfo="", timingInfo=[];
+			for(var i=0; i<howManyTimeInterval;i++){
+				timingInfo.push($filter("myShortTime")(times[i]["from"])+" to "+$filter("myShortTime")(times[i]["to"]));
+			}
+			if(closeDays.length!=0)
+            {
+				additionalInfo="except "+$filter("arrayToString")(closeDays);
+			return timingInfo.join(", ")+" "+additionalInfo;
+            }
+            else
+            {
+                return timingInfo.join(", ")+" every day";
+            }
+                
+		}
+		else{
+			return "Incorrect Data";
+		}
+	}		
+	$scope.result = $scope.jsonToStringData($scope.json);
+
+};
+app.service("day", function(){
+	this.allWeakDays={
+		"sun":"Sunday",
+		"mon":"Monday",
+		"tue":"Tuesday",
+		"wed":"Wednesday",
+		"thu":"Thursday",
+		"fri":"Friday",
+		"sat":"Saturday"
+	}
+})
+app.filter("fullDayFilter", function(day){
+	return function(n){
+		if(n==null)
+			return;
+		return day.allWeakDays[n];
+	};
+})
+app.filter('myShortTime', function () {
+    return function (n) {
+    	if(n==null)
+    		return;
+    	var pre, post, seprator=":",peridian='';
+    	pre =n/100;
+    	post=n%100;
+		post=post<10?"0"+post:post;
+    	var pre=parseInt(pre);
+    	if(pre>12){
+    		pre=pre-12;
+    		peridian=" PM"
+    	} else {
+    		peridian=" AM"
+    	}
+    	if(parseInt(pre)==0)
+    		pre=12;
+    	return pre+seprator+post+peridian;
+    }
+});
+app.filter('arrayToString', function () {
+    return function (n) {
+    	if(n==null)
+    		return;
+    	return n.join(" and ");
+    }
+});
